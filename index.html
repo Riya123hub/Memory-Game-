@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Turbo Racer</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #101820;
+    color: white;
+    overflow: hidden;
+    user-select: none;
+}
+
+.game-container {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.header {
+    width: 350px;
+    max-width: 95%;
+    display: flex;
+    justify-content: space-between;
+    padding: 15px;
+    background: #1f2937;
+    border-radius: 12px 12px 0 0;
+}
+
+.header h2 {
+    color: #00ff88;
+    font-size: 20px;
+}
+
+.score-box {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.game-area {
+    position: relative;
+    width: 350px;
+    height: 600px;
+    max-height: 75vh;
+    background: #555;
+    overflow: hidden;
+    border-left: 7px solid #00cc66;
+    border-right: 7px solid #00cc66;
+}
+
+.road {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: #333;
+}
+
+.lane-line {
+    position: absolute;
+    width: 8px;
+    height: 100px;
+    background: white;
+    left: 33.33%;
+    top: 0;
+    box-shadow: 0 160px white, 0 320px white;
+}
+
+.lane-line.second {
+    left: 66.66%;
+}
+
+.player {
+    position: absolute;
+    width: 50px;
+    height: 90px;
+    bottom: 20px;
+    left: 150px;
+    background: #00aaff;
+    border-radius: 12px 12px 8px 8px;
+    border: 3px solid white;
+    z-index: 5;
+}
+
+.car-window {
+    width: 30px;
+    height: 22px;
+    background: #bdefff;
+    margin: 10px auto;
+    border-radius: 5px;
+}
+
+.car-light {
+    position: absolute;
+    bottom: 5px;
+    width: 10px;
+    height: 8px;
+    background: yellow;
+    border-radius: 3px;
+}
+
+.car-light.left {
+    left: 5px;
+}
+
+.car-light.right {
+    right: 5px;
+}
+
+.enemy {
+    position: absolute;
+    width: 50px;
+    height: 90px;
+    background: #ff3333;
+    border: 3px solid white;
+    border-radius: 12px 12px 8px 8px;
+    top: -110px;
+}
+
+.enemy .car-window {
+    background: #ffcccc;
+}
+
+.overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    text-align: center;
+    padding: 20px;
+}
+
+.overlay h1 {
+    font-size: 36px;
+    color: #00ff88;
+    margin-bottom: 15px;
+}
+
+.overlay p {
+    margin-bottom: 20px;
+    font-size: 17px;
+    line-height: 1.5;
+}
+
+button {
+    border: none;
+    padding: 13px 25px;
+    border-radius: 8px;
+    background: #00ff88;
+    color: #101820;
+    font-weight: bold;
+    font-size: 17px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #00cc66;
+}
+
+.controls {
+    width: 350px;
+    max-width: 95%;
+    display: flex;
+    justify-content: space-around;
+    padding: 12px;
+    background: #1f2937;
+    border-radius: 0 0 12px 12px;
+}
+
+.control-btn {
+    width: 100px;
+    font-size: 25px;
+    background: #374151;
+    color: white;
+    touch-action: manipulation;
+}
+
+.control-btn:active {
+    background: #00ff88;
+    color: black;
+}
+
+.hidden {
+    display: none !important;
+}
+
+@media (max-height: 700px) {
+    .game-area {
+        height: 70vh;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="game-container">
+
+    <div class="header">
+        <h2>🏎️ TURBO RACER</h2>
+        <div class="score-box">
+            Score: <span id="score">0</span>
+        </div>
+    </div>
+
+    <div class="game-area" id="gameArea">
+
+        <div class="road" id="road">
+
+            <div class="lane-line"></div>
+            <div class="lane-line second"></div>
+
+        </div>
+
+        <div class="player" id="player">
+
+            <div class="car-window"></div>
+
+            <div class="car-light left"></div>
+            <div class="car-light right"></div>
+
+        </div>
+
+        <div class="overlay" id="startScreen">
+
+            <h1>🏎️ TURBO RACER</h1>
+
+            <p>
+                Dodge enemy cars and survive as long as possible!
+                <br><br>
+                Use Arrow Keys or buttons to drive.
+            </p>
+
+            <button onclick="startGame()">START GAME</button>
+
+        </div>
+
+        <div class="overlay hidden" id="gameOverScreen">
+
+            <h1>💥 GAME OVER</h1>
+
+            <p>Your Score: <span id="finalScore">0</span></p>
+
+            <p id="bestScoreText">Best Score: 0</p>
+
+            <button onclick="startGame()">PLAY AGAIN</button>
+
+        </div>
+
+    </div>
+
+    <div class="controls">
+
+        <button class="control-btn"
+            onpointerdown="moveLeft()"
+            onpointerup="stopMove()"
+            onpointerleave="stopMove()">
+            ⬅️
+        </button>
+
+        <button class="control-btn"
+            onpointerdown="moveRight()"
+            onpointerup="stopMove()"
+            onpointerleave="stopMove()">
+            ➡️
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+const gameArea = document.getElementById("gameArea");
+const player = document.getElementById("player");
+const road = document.getElementById("road");
+
+const scoreElement = document.getElementById("score");
+
+const startScreen = document.getElementById("startScreen");
+const gameOverScreen = document.getElementById("gameOverScreen");
+
+const finalScore = document.getElementById("finalScore");
+const bestScoreText = document.getElementById("bestScoreText");
+
+let playerX = 150;
+
+let score = 0;
+let speed = 5;
+
+let enemies = [];
+
+let gameRunning = false;
+
+let roadPosition = 0;
+
+let animationFrame;
+
+let enemyTimer;
+
+let moveDirection = 0;
+
+const roadWidth = 350;
+const carWidth = 50;
+
+const lanes = [35, 145, 255];
+
+
+// Keyboard controls
+
+document.addEventListener("keydown", function(event) {
+
+    if (event.key === "ArrowLeft") {
+        moveDirection = -1;
+    }
+
+    if (event.key === "ArrowRight") {
+        moveDirection = 1;
+    }
+
+});
+
+document.addEventListener("keyup", function(event) {
+
+    if (
+        event.key === "ArrowLeft" ||
+        event.key === "ArrowRight"
+    ) {
+        moveDirection = 0;
+    }
+
+});
+
+
+// Mobile controls
+
+function moveLeft() {
+    moveDirection = -1;
+}
+
+function moveRight() {
+    moveDirection = 1;
+}
+
+function stopMove() {
+    moveDirection = 0;
+}
+
+
+// Start game
+
+function startGame() {
+
+    cancelAnimationFrame(animationFrame);
+    clearInterval(enemyTimer);
+
+    enemies.forEach(enemy => enemy.remove());
+
+    enemies = [];
+
+    score = 0;
+
+    speed = 5;
+
+    roadPosition = 0;
+
+    playerX = 150;
+
+    player.style.left = playerX + "px";
+
+    scoreElement.textContent = score;
+
+    moveDirection = 0;
+
+    startScreen.classList.add("hidden");
+
+    gameOverScreen.classList.add("hidden");
+
+    gameRunning = true;
+
+    enemyTimer = setInterval(createEnemy, 1000);
+
+    gameLoop();
+
+}
+
+
+// Create enemy cars
+
+function createEnemy() {
+
+    if (!gameRunning) return;
+
+    const enemy = document.createElement("div");
+
+    enemy.classList.add("enemy");
+
+    const randomLane = lanes[
+        Math.floor(Math.random() * lanes.length)
+    ];
+
+    enemy.style.left = randomLane + "px";
+
+    enemy.innerHTML = `
+        <div class="car-window"></div>
+        <div class="car-light left"></div>
+        <div class="car-light right"></div>
+    `;
+
+    gameArea.appendChild(enemy);
+
+    enemies.push(enemy);
+
+}
+
+
+// Game loop
+
+function gameLoop() {
+
+    if (!gameRunning) return;
+
+    // Move player
+
+    playerX += moveDirection * 6;
+
+    playerX = Math.max(
+        0,
+        Math.min(roadWidth - carWidth, playerX)
+    );
+
+    player.style.left = playerX + "px";
+
+
+    // Move road lines
+
+    roadPosition += speed;
+
+    if (roadPosition >= 100) {
+        roadPosition = 0;
+    }
+
+    document.querySelectorAll(".lane-line").forEach(line => {
+        line.style.backgroundPositionY = roadPosition + "px";
+    });
+
+
+    // Move enemies
+
+    enemies.forEach((enemy, index) => {
+
+        let enemyY = enemy.offsetTop + speed;
+
+        enemy.style.top = enemyY + "px";
+
+
+        // Collision detection
+
+        if (checkCollision(player, enemy)) {
+            endGame();
+        }
+
+
+        // Remove enemy after leaving screen
+
+        if (enemyY > gameArea.offsetHeight) {
+
+            enemy.remove();
+
+            enemies.splice(index, 1);
+
+            score += 10;
+
+            scoreElement.textContent = score;
+
+            // Increase difficulty
+
+            if (score % 50 === 0) {
+                speed += 0.5;
+            }
+
+        }
+
+    });
+
+
+    animationFrame = requestAnimationFrame(gameLoop);
+
+}
+
+
+// Collision detection
+
+function checkCollision(player, enemy) {
+
+    const p = player.getBoundingClientRect();
+    const e = enemy.getBoundingClientRect();
+
+    return (
+        p.left < e.right - 8 &&
+        p.right > e.left + 8 &&
+        p.top < e.bottom - 8 &&
+        p.bottom > e.top + 8
+    );
+
+}
+
+
+// Game over
+
+function endGame() {
+
+    gameRunning = false;
+
+    clearInterval(enemyTimer);
+
+    cancelAnimationFrame(animationFrame);
+
+    finalScore.textContent = score;
+
+    let bestScore = localStorage.getItem("racingBest") || 0;
+
+    if (score > bestScore) {
+
+        bestScore = score;
+
+        localStorage.setItem("racingBest", bestScore);
+
+    }
+
+    bestScoreText.textContent = "🏆 Best Score: " + bestScore;
+
+    gameOverScreen.classList.remove("hidden");
+
+}
+
+
+// Initial best score
+
+bestScoreText.textContent =
+    "🏆 Best Score: " +
+    (localStorage.getItem("racingBest") || 0);
+
+</script>
+
+</body>
+</html>
